@@ -1,0 +1,89 @@
+---
+title: "Assignment of week 2"
+author: "Pieter ten Have"
+date: "October 24, 2016"
+output: html_document
+---
+
+This document describes the analysis of the activity dataset.
+
+```{r setup, echo=TRUE}
+rm(list=ls())
+setwd("C:/Users/Pieter/Documents")
+a<-read.csv(file="activity.csv", header=T, na.string="NA")
+steps_a_day<-tapply(a$steps, a$date, sum, na.rm=T)
+steps_a_day<-as.numeric(steps_a_day)
+hist(steps_a_day, xlab="Number of steps per day")
+```
+
+Calculate the median.
+
+```{r}
+median(steps_a_day, na.rm=T)
+
+```
+
+Calculate the average.
+
+```{r}
+mean(steps_a_day, na.rm=T)
+```
+
+Below you see a plot of the average number of steps in each 5-min interval of the day.
+
+```{r}
+a$interval<-as.numeric(a$interval)
+steps_per_interv<-tapply(a$steps, a$interval, mean, na.rm=T)
+interv<-unique(a$interval)
+steps_tbl<-data.frame(interv, steps_per_interv)
+plot(steps_tbl, type="n", xlab="5 min intervals from 0 AM to 12 PM",
+     main="Average number of steps in 5 min interval during the day")
+lines(steps_tbl)
+```
+
+The code below imputes missing values. It looks for the average number of steps in a corresponding interval in the other days, and replaces the missing value by this number.
+
+```{r}
+for (lst in interv){
+  assgn<-steps_tbl$steps_per_interv[steps_tbl$interv==lst]
+  a$steps[is.na(a$steps) & a$interval==lst]<-assgn
+}
+```
+
+Below is a histogram of the average number of steps per day, after imputing the missing values.
+
+```{r}
+steps_a_day2<-tapply(a$steps, a$date, sum, na.rm=T)
+steps_a_day2<-as.numeric(steps_a_day2)
+hist(steps_a_day2, main="Histogram of total number of steps per day")
+```
+
+Below is a plot of a weekend day and a non-weekend day with the  average number of steps in each 5-min interval of the day.
+
+```{r}
+a$weekday<-weekdays(as.Date(a$date))
+a$weekend<-0
+a$weekend[a$weekday %in% c("Saturday","Sunday")]<-1
+
+par(mfrow=c(1,2)) 
+
+a10<-subset(a, weekend==0)
+steps_per_interv<-tapply(a10$steps, a10$interval, mean)
+interv<-unique(a$interval)
+steps_tbl<-data.frame(interv, steps_per_interv)
+plot(steps_tbl, type="n", main="No. of steps per 5-min
+  interval in non-weekend day")
+lines(steps_tbl)
+
+a11<-subset(a, weekend==1)
+steps_per_interv2<-tapply(a11$steps, a11$interval, mean)
+interv<-unique(a$interval)
+steps_tbl2<-data.frame(interv, steps_per_interv2)
+plot(steps_tbl2, type="n", main="No. of steps per 5-min
+interval in weekend day")
+lines(steps_tbl2)
+```
+
+
+
+
